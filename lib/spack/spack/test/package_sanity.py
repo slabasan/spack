@@ -172,15 +172,17 @@ def test_prs_update_old_api():
     ]
     failing = []
     for file in changed_package_files:
-        name = os.path.basename(os.path.dirname(file))
-        pkg = spack.repo.get(name)
+        filename = os.path.join(spack.paths.spack_root, file)
+        with open(filename, 'r') as f:
+            text = f.read()
 
-        # Check for old APIs
-        failed = (hasattr(pkg, 'setup_environment') or
-                  hasattr(pkg, 'setup_dependent_environment'))
+        failed = ('\n    def setup_environment' in text or
+                  '\n    def setup_dependent_environment' in text)
         if failed:
-            failing.append(pkg)
+            name = os.path.basename(os.path.dirname(file))
+            failing.append(name)
+
     msg = 'there are {0} packages still using old APIs in this PR [{1}]'
     assert not failing, msg.format(
-        len(failing), ','.join(x.name for x in failing)
+        len(failing), ','.join(failing)
     )
